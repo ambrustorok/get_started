@@ -1,9 +1,9 @@
 -- ~/.config/nvim/init.lua
 
--- Leader must be set before plugins
+-- Leader must be defined before plugins
 vim.g.mapleader = " "
 
--- Basic editor defaults
+-- Basic editor settings
 local opt = vim.opt
 opt.number = true
 opt.relativenumber = true
@@ -19,7 +19,7 @@ opt.ignorecase = true
 opt.smartcase = true
 opt.clipboard:append({ "unnamedplus" })
 
--- Install package manager
+-- Bootstrap lazy.nvim
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
 if not vim.loop.fs_stat(lazypath) then
   vim.fn.system({
@@ -39,13 +39,8 @@ require("lazy").setup({
   change_detection = { notify = false },
 })
 
--- Make Mason-installed binaries visible to Neovim
+-- Make Mason binaries visible inside Neovim
 vim.env.PATH = vim.fn.stdpath("data") .. "/mason/bin:" .. vim.env.PATH
 
--- Toggle file tree
-vim.keymap.set("n", "<C-n>", ":NvimTreeToggle<CR>", { noremap = true, silent = true })
-
--- LSP convenience mappings when diagnostics exist
-vim.keymap.set("n", "[d", vim.diagnostic.goto_prev, { desc = "Prev diagnostic" })
-vim.keymap.set("n", "]d", vim.diagnostic.goto_next, { desc = "Next diagnostic" })
-vim.keymap.set("n", "<leader>e", vim.diagnostic.open_float, { desc = "Line diagnostics" })
+-- Quick mappings
+dofile(vim.fn.stdpath("config") .. "/lua/mappings.lua")

@@ -4,7 +4,13 @@
 
 # Neovim (nvim) + Python LSP Setup (Ubuntu/Debian)
 
-This README documents how to install a recent Neovim (0.11+) and set up a Python LSP (Pyright) using `lazy.nvim` + `mason.nvim`.
+This README documents how to install a recent Neovim (0.11+) and set up a Python LSP (Pyright) using a **minimal** `lazy.nvim` + `mason.nvim` setup.
+
+What this config gives you:
+- System clipboard integration (everything copies to the OS clipboard)
+- Automatic Pyright install + startup the moment you open a `.py` file
+- `nvim-tree` bound to `<C-n>` for a simple file explorer
+- A tiny codebase (`init.lua`, `lua/mappings.lua`, `lua/plugins/init.lua`, `lua/lsp_setup.lua`) that you can tweak easily
 
 ---
 
@@ -52,6 +58,8 @@ You should see `~/.local/bin/nvim` and `NVIM v0.11.x`.
 Typical layout:
 - `~/.config/nvim/init.lua`
 - `~/.config/nvim/lua/plugins/init.lua`
+- `~/.config/nvim/lua/mappings.lua`
+- `~/.config/nvim/lua/lsp_setup.lua`
 
 If using lazy.nvim with:
 ```lua
@@ -82,11 +90,12 @@ If you want Neovim to always see Mason-installed tools, add this to `init.lua`:
 vim.env.PATH = vim.fn.stdpath("data") .. "/mason/bin:" .. vim.env.PATH
 ```
 
-This repo also enables `mason-lspconfig` with:
-```lua
-mason_lspconfig.setup({ ensure_installed = { "pyright" } })
-```
-so Pyright is installed/updated automatically when you run `:Mason` or when Lazy loads the plugin. Add more servers to that list in `nvim/lua/plugins/init.lua` to extend LSP coverage.
+This repo keeps a helper module (`lua/lsp_setup.lua`) that:
+- ensures the `pyright` package is installed via Mason’s registry,
+- watches for Python buffers and starts Pyright with `vim.lsp.start`, and
+- wires buffer-local LSP keymaps on `LspAttach`.
+
+To add more LSP servers, edit the `ensure` table and duplicate the `vim.lsp.start` call inside `lua/lsp_setup.lua`.
 
 ---
 
@@ -172,8 +181,7 @@ If keys don’t match, open help in the tree buffer:
    - `:Lazy sync`
 
 2. Install Pyright (if not already):
-   - `:Mason` → search/install `pyright`
-   - or `:MasonToolsInstall` (if configured)
+   - `:Mason` → verify `pyright` shows “Installed” (the helper auto-installs, but the UI proves it)
 
 3. Open a Python file:
    - `nvim your_script.py`
@@ -191,7 +199,7 @@ If keys don’t match, open help in the tree buffer:
 ### `:Mason` says “Not an editor command”
 - `mason.nvim` plugin is not loaded/installed
 - Run `:Lazy sync`
-- Ensure `mason.nvim` (and `mason-lspconfig.nvim`) are in your plugin list and not disabled
+- Ensure `mason.nvim` remains in `lua/plugins/init.lua`
 
 ### `pyright-langserver` exists but Neovim can’t run it
 - Add Mason bin path into Neovim PATH:
@@ -205,8 +213,7 @@ If keys don’t match, open help in the tree buffer:
 
 ### LSP not attaching to Python files
 - Check `:LspInfo` in a `.py` buffer
-- Ensure `mason-lspconfig` lists `"pyright"` under `ensure_installed`
-- Confirm `nvim-lspconfig` attaches by checking for “pyright” client in `:LspInfo`
+- Open `lua/lsp_setup.lua` and confirm `M.start_pyright` is being called (the module adds BufRead/FileType autocmds)
 - Ensure filetype is detected as python:
   ```vim
   :set filetype?
