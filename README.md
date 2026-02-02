@@ -77,7 +77,19 @@ command -v ruff
 
 Common mappings (set in `lua/lsp_setup.lua`): `gd`, `gr`, `K`, `<leader>rn`, `<leader>ca`, `<leader>f`, `[d`, `]d`, `<leader>e`.
 
-## 5) Typical workflow
+## 5) File tree (nvim-tree)
+
+- Toggle the explorer with `<C-n>`; the tree appears on the left and closes with the same mapping.
+- Move through entries with `j`/`k` (down/up) and jump to the top/bottom with `gg` / `G` just like a normal buffer.
+- `h` collapses the current directory (or jumps to its parent), while `l` expands a folder or opens a file; `L` opens the node and all children in one go.
+- Use `<CR>` (or `o`) to open the highlighted file. `v` splits vertically, `s` splits horizontally, and `<Tab>` keeps the tree focused while previewing the file.
+- `a` creates files/directories relative to the selected node, `d` deletes, and `r` renames; confirm prompts with `<CR>`.
+- Press `R` to refresh the tree when files change outside Neovim. Toggle dotfiles with `H` and git-ignored files with `I` when you need a cleaner view.
+- `C` re-roots the tree at the folder under your cursor, `p` jumps to that node's parent, and `q` closes the tree window entirely.
+- `Ctrl-w h/l` moves focus between the tree and editing windows; `:wincmd =` evens sizes after resizing.
+- Hit `?` inside the tree for the built-in cheatsheet of every default mapping if you forget something.
+
+## 6) Typical workflow
 
 1. Run `:Lazy sync` to install plugins.
 2. Open `:Mason` and confirm `pyright` + `ruff` show “Installed” (the helper auto-installs them if missing).
@@ -85,7 +97,7 @@ Common mappings (set in `lua/lsp_setup.lua`): `gd`, `gr`, `K`, `<leader>rn`, `<l
 4. Run `:LspInfo` — you should see `pyright` and `ruff` attached.
 5. Use the LSP mappings for navigation, refactors, formatting, and diagnostics.
 
-## 6) Troubleshooting
+## 7) Troubleshooting
 
 ### `:Mason` not found
 - Run `:Lazy sync` (ensures `mason.nvim` is installed)
