@@ -82,6 +82,12 @@ If you want Neovim to always see Mason-installed tools, add this to `init.lua`:
 vim.env.PATH = vim.fn.stdpath("data") .. "/mason/bin:" .. vim.env.PATH
 ```
 
+This repo also enables `mason-lspconfig` with:
+```lua
+mason_lspconfig.setup({ ensure_installed = { "pyright" } })
+```
+so Pyright is installed/updated automatically when you run `:Mason` or when Lazy loads the plugin. Add more servers to that list in `nvim/lua/plugins/init.lua` to extend LSP coverage.
+
 ---
 
 ## 4) Useful Commands (Cheatsheet)
@@ -94,8 +100,8 @@ vim.env.PATH = vim.fn.stdpath("data") .. "/mason/bin:" .. vim.env.PATH
 
 ### Mason (tool installer)
 - `:Mason` — open Mason UI
-- `:MasonToolsInstall` — install tools listed in `mason-tool-installer.nvim` (if used)
-- `:MasonToolsUpdate` — update installed tools (if supported/configured)
+- `:MasonUpdate` — refresh Mason registry + reinstall packages (same as plugin build step)
+- `:MasonLog` — open Mason log file
 
 CLI checks:
 ```sh
@@ -120,6 +126,9 @@ Common in-buffer actions (when LSP attached):
 - Hover docs: `K`
 - Rename: `<leader>rn`
 - Code action: `<leader>ca`
+- Format buffer: `<leader>f`
+- Diagnostics navigation: `[d` / `]d`
+- Diagnostics float: `<leader>e`
 
 (Exact mappings depend on your config.)
 
@@ -182,7 +191,7 @@ If keys don’t match, open help in the tree buffer:
 ### `:Mason` says “Not an editor command”
 - `mason.nvim` plugin is not loaded/installed
 - Run `:Lazy sync`
-- Ensure `mason.nvim` is in your plugin list and not disabled
+- Ensure `mason.nvim` (and `mason-lspconfig.nvim`) are in your plugin list and not disabled
 
 ### `pyright-langserver` exists but Neovim can’t run it
 - Add Mason bin path into Neovim PATH:
@@ -196,7 +205,8 @@ If keys don’t match, open help in the tree buffer:
 
 ### LSP not attaching to Python files
 - Check `:LspInfo` in a `.py` buffer
-- Ensure the config calls `vim.lsp.enable("pyright")`
+- Ensure `mason-lspconfig` lists `"pyright"` under `ensure_installed`
+- Confirm `nvim-lspconfig` attaches by checking for “pyright” client in `:LspInfo`
 - Ensure filetype is detected as python:
   ```vim
   :set filetype?

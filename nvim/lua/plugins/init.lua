@@ -9,56 +9,53 @@ return {
     end,
   },
 
-  -- Mason UI + installs tools
   {
     "williamboman/mason.nvim",
+    build = ":MasonUpdate",
     lazy = false,
     config = function()
       require("mason").setup()
     end,
   },
 
-  -- Ensure tools are installed (no mason-lspconfig needed)
   {
-    "WhoIsSethDaniel/mason-tool-installer.nvim",
-    dependencies = { "williamboman/mason.nvim" },
+    "neovim/nvim-lspconfig",
+    event = { "BufReadPre", "BufNewFile" },
+    dependencies = {
+      "williamboman/mason.nvim",
+      "williamboman/mason-lspconfig.nvim",
+    },
     config = function()
-      require("mason-tool-installer").setup({
-        ensure_installed = {
-          "pyright", -- Mason package name
-        },
-        auto_update = false,
-        run_on_start = true,
+      local lspconfig = require("lspconfig")
+      local mason_lspconfig = require("mason-lspconfig")
+
+      mason_lspconfig.setup({
+        ensure_installed = { "pyright" },
       })
-    end,
-  },
 
-  -- Disable old lspconfig plugin (you already saw deprecation warnings)
-  { "neovim/nvim-lspconfig", enabled = false },
+      local on_attach = function(_, bufnr)
+        local map = function(mode, lhs, rhs, desc)
+          vim.keymap.set(mode, lhs, rhs, { buffer = bufnr, desc = desc })
+        end
 
-  -- Configure Neovim's built-in LSP (0.11+)
-  {
-    "pyright-lsp-setup",
-    lazy = false,
-    config = function()
-      vim.api.nvim_create_autocmd("LspAttach", {
-        callback = function(args)
-          local opts = { buffer = args.buf }
-          vim.keymap.set("n", "gd", vim.lsp.buf.definition, opts)
-          vim.keymap.set("n", "gr", vim.lsp.buf.references, opts)
-          vim.keymap.set("n", "K", vim.lsp.buf.hover, opts)
-          vim.keymap.set("n", "<leader>rn", vim.lsp.buf.rename, opts)
-          vim.keymap.set("n", "<leader>ca", vim.lsp.buf.code_action, opts)
+        map("n", "gd", vim.lsp.buf.definition, "Goto definition")
+        map("n", "gr", vim.lsp.buf.references, "Goto references")
+        map("n", "K", vim.lsp.buf.hover, "Hover info")
+        map("n", "<leader>rn", vim.lsp.buf.rename, "Rename symbol")
+        map("n", "<leader>ca", vim.lsp.buf.code_action, "Code action")
+        map("n", "<leader>f", function()
+          vim.lsp.buf.format({ async = true })
+        end, "Format buffer")
+      end
+
+      mason_lspconfig.setup_handlers({
+        function(server_name)
+          lspconfig[server_name].setup({
+            on_attach = on_attach,
+            capabilities = vim.lsp.protocol.make_client_capabilities(),
+          })
         end,
       })
-
-      vim.lsp.config("pyright", {
-        cmd = { "pyright-langserver", "--stdio" },
-        filetypes = { "python" },
-        root_markers = { "pyproject.toml", "setup.py", "setup.cfg", "requirements.txt", ".git" },
-      })
-
-      vim.lsp.enable("pyright")
     end,
   },
 }
