@@ -22,6 +22,9 @@ require("lazy").setup({
   },
 })
 
+-- Make Mason-installed binaries visible to Neovim
+vim.env.PATH = vim.fn.stdpath("data") .. "/mason/bin:" .. vim.env.PATH
+
 -- Disable right click in all modes
 for _, mode in ipairs({'n', 'i', 'v'}) do
   vim.api.nvim_set_keymap(mode, '<RightMouse>', '<Nop>', { noremap = true, silent = true })
