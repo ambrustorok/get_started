@@ -8,7 +8,7 @@ This README documents how to install a recent Neovim (0.11+) and set up a Python
 
 What this config gives you:
 - System clipboard integration (everything copies to the OS clipboard)
-- Automatic Pyright install + startup the moment you open a `.py` file
+- Automatic Pyright **and Ruff** install + startup the moment you open a `.py` file
 - `nvim-tree` bound to `<C-n>` for a simple file explorer
 - A tiny codebase (`init.lua`, `lua/mappings.lua`, `lua/plugins/init.lua`, `lua/lsp_setup.lua`) that you can tweak easily
 
@@ -91,11 +91,16 @@ vim.env.PATH = vim.fn.stdpath("data") .. "/mason/bin:" .. vim.env.PATH
 ```
 
 This repo keeps a helper module (`lua/lsp_setup.lua`) that:
-- ensures the `pyright` package is installed via Mason’s registry,
-- watches for Python buffers and starts Pyright with `vim.lsp.start`, and
+- ensures the `pyright` **and** `ruff-lsp` packages are installed via Mason’s registry,
+- watches for Python buffers and starts both servers with `vim.lsp.start`, and
 - wires buffer-local LSP keymaps on `LspAttach`.
 
-To add more LSP servers, edit the `ensure` table and duplicate the `vim.lsp.start` call inside `lua/lsp_setup.lua`.
+`pyright` provides type checking + navigation, while `ruff-lsp` handles linting and formatting (so `<leader>f` runs Ruff). To add more languages, extend the `servers` table inside `lua/lsp_setup.lua`.
+
+### Ruff details
+- Uses the `ruff-lsp` executable shipped by Mason (no separate pip install needed).
+- Respects whatever configuration you place in `ruff.toml` or `pyproject.toml`.
+- Supplies diagnostics, code actions (e.g., autofix), and formatter support through the same `<leader>f` mapping.
 
 ---
 
@@ -116,6 +121,7 @@ CLI checks:
 ```sh
 ls -la ~/.local/share/nvim/mason/bin | head
 command -v pyright-langserver
+command -v ruff-lsp
 ```
 
 ### LSP (built-in Neovim LSP)
@@ -180,14 +186,14 @@ If keys don’t match, open help in the tree buffer:
 1. Update plugins:
    - `:Lazy sync`
 
-2. Install Pyright (if not already):
-   - `:Mason` → verify `pyright` shows “Installed” (the helper auto-installs, but the UI proves it)
+2. Install Pyright + Ruff (if not already):
+   - `:Mason` → verify `pyright` and `ruff-lsp` show “Installed” (the helper auto-installs them, but the UI proves it)
 
 3. Open a Python file:
    - `nvim your_script.py`
 
 4. Verify LSP attaches:
-   - `:LspInfo`
+   - `:LspInfo` (should list `pyright` and `ruff_lsp`)
 
 5. Use LSP features:
    - `gd`, `gr`, `K`, `<leader>rn`, `<leader>ca`
@@ -212,8 +218,8 @@ If keys don’t match, open help in the tree buffer:
   ```
 
 ### LSP not attaching to Python files
-- Check `:LspInfo` in a `.py` buffer
-- Open `lua/lsp_setup.lua` and confirm `M.start_pyright` is being called (the module adds BufRead/FileType autocmds)
+- Check `:LspInfo` in a `.py` buffer (expect both `pyright` and `ruff_lsp`)
+- Open `lua/lsp_setup.lua` and confirm the `servers` table lists the clients you expect
 - Ensure filetype is detected as python:
   ```vim
   :set filetype?

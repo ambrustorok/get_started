@@ -2,12 +2,48 @@
 
 local M = {}
 
-local ensure = { "pyright" }
-local pending_buffers = {}
-local notified_missing = false
+local capabilities = vim.lsp.protocol.make_client_capabilities()
+
+local servers = {
+  pyright = {
+    package = "pyright",
+    cmd = { "pyright-langserver", "--stdio" },
+    executable = "pyright-langserver",
+    filetypes = { "python" },
+    settings = {
+      python = {
+        analysis = {
+          autoImportCompletions = true,
+          useLibraryCodeForTypes = true,
+        },
+      },
+    },
+  },
+  ruff_lsp = {
+    package = "ruff-lsp",
+    cmd = { "ruff-lsp" },
+    executable = "ruff-lsp",
+    filetypes = { "python" },
+    init_options = {
+      settings = {
+        args = {},
+      },
+    },
+  },
+}
+
+local package_to_server = {}
+local ensure = {}
+for name, spec in pairs(servers) do
+  package_to_server[spec.package] = name
+  table.insert(ensure, spec.package)
+end
+
+local pending = {}
+local notified_missing = {}
 
 local function root_dir(fname)
-  fname = fname ~= "" and fname or vim.fn.expand("%:p")
+  fname = (fname and fname ~= "") and fname or vim.fn.expand("%:p")
   local root_files = {
     "pyproject.toml",
     "setup.py",
@@ -20,6 +56,44 @@ local function root_dir(fname)
   return path and vim.fs.dirname(path) or vim.loop.cwd()
 end
 
+local start_server -- forward declare
+
+local function is_empty(tbl)
+  return not tbl or next(tbl) == nil
+end
+
+local function mark_pending(name, bufnr)
+  pending[name] = pending[name] or {}
+  pending[name][bufnr] = true
+end
+
+local function clear_pending(name, bufnr)
+  if not pending[name] then
+    return
+  end
+  if bufnr then
+    pending[name][bufnr] = nil
+    if is_empty(pending[name]) then
+      pending[name] = nil
+    end
+  else
+    pending[name] = nil
+  end
+end
+
+local function flush_pending(name)
+  if not pending[name] then
+    return
+  end
+  local buffers = pending[name]
+  pending[name] = nil
+  for buf, _ in pairs(buffers) do
+    if vim.api.nvim_buf_is_valid(buf) then
+      start_server(name, buf)
+    end
+  end
+end
+
 local function ensure_tools()
   local ok, registry = pcall(require, "mason-registry")
   if not ok then
@@ -27,23 +101,21 @@ local function ensure_tools()
   end
 
   local function install()
-    for _, name in ipairs(ensure) do
-      local success, pkg = pcall(registry.get_package, name)
+    for _, package in ipairs(ensure) do
+      local success, pkg = pcall(registry.get_package, package)
       if success then
+        local server = package_to_server[pkg:name()]
         if not pkg:is_installed() then
           pkg:on("install:success", function()
-            vim.schedule(function()
-              for buf, _ in pairs(pending_buffers) do
-                if vim.api.nvim_buf_is_valid(buf) and vim.bo[buf].filetype == "python" then
-                  pending_buffers[buf] = nil
-                  vim.schedule(function()
-                    M.start_pyright(buf)
-                  end)
-                end
-              end
-            end)
+            if server then
+              vim.schedule(function()
+                flush_pending(server)
+              end)
+            end
           end)
           pkg:install()
+        elseif server then
+          flush_pending(server)
         end
       end
     end
@@ -58,7 +130,7 @@ end
 
 local function lsp_keymaps(event)
   local buf = event.buf
-  local map = function(mode, lhs, rhs, desc)
+  local function map(mode, lhs, rhs, desc)
     vim.keymap.set(mode, lhs, rhs, { buffer = buf, desc = desc })
   end
 
@@ -72,10 +144,15 @@ local function lsp_keymaps(event)
   end, "Format buffer")
 end
 
-function M.start_pyright(bufnr)
+start_server = function(name, bufnr)
+  local spec = servers[name]
+  if not spec then
+    return
+  end
+
   bufnr = bufnr or vim.api.nvim_get_current_buf()
   if not vim.api.nvim_buf_is_valid(bufnr) then
-    pending_buffers[bufnr] = nil
+    clear_pending(name, bufnr)
     return
   end
 
@@ -83,40 +160,42 @@ function M.start_pyright(bufnr)
     return
   end
 
-  local clients = vim.lsp.get_clients({ bufnr = bufnr, name = "pyright" })
+  local clients = vim.lsp.get_clients({ bufnr = bufnr, name = name })
   if clients and #clients > 0 then
-    pending_buffers[bufnr] = nil
+    clear_pending(name, bufnr)
     return
   end
 
-  if vim.fn.executable("pyright-langserver") == 0 then
-    pending_buffers[bufnr] = true
-    if not notified_missing then
-      notified_missing = true
+  local exe = spec.executable or spec.cmd[1]
+  if vim.fn.executable(exe) == 0 then
+    mark_pending(name, bufnr)
+    if not notified_missing[exe] then
+      notified_missing[exe] = true
       vim.schedule(function()
-        vim.notify("Waiting for Mason to install pyright-langserver...", vim.log.levels.INFO)
+        vim.notify(("Waiting for Mason to install %s..."):format(exe), vim.log.levels.INFO)
       end)
     end
     return
   end
 
-  pending_buffers[bufnr] = nil
+  clear_pending(name, bufnr)
 
+  local filename = vim.api.nvim_buf_get_name(bufnr)
   vim.lsp.start({
-    name = "pyright",
-    cmd = { "pyright-langserver", "--stdio" },
-    root_dir = root_dir(vim.api.nvim_buf_get_name(bufnr)),
-    filetypes = { "python" },
-    capabilities = vim.lsp.protocol.make_client_capabilities(),
-    settings = {
-      python = {
-        analysis = {
-          autoImportCompletions = true,
-          useLibraryCodeForTypes = true,
-        },
-      },
-    },
+    name = name,
+    cmd = spec.cmd,
+    root_dir = spec.root_dir and spec.root_dir(filename) or root_dir(filename),
+    filetypes = spec.filetypes,
+    capabilities = capabilities,
+    init_options = spec.init_options,
+    settings = spec.settings,
   }, { bufnr = bufnr })
+end
+
+local function start_all(bufnr)
+  for name, _ in pairs(servers) do
+    start_server(name, bufnr)
+  end
 end
 
 function M.setup()
@@ -126,20 +205,18 @@ function M.setup()
     callback = lsp_keymaps,
   })
 
-  vim.api.nvim_create_autocmd({ "BufReadPost", "BufNewFile" }, {
-    callback = function(event)
-      if vim.bo[event.buf].filetype == "python" then
-        M.start_pyright(event.buf)
-      end
-    end,
-  })
-
   vim.api.nvim_create_autocmd("FileType", {
     pattern = "python",
     callback = function(event)
-      M.start_pyright(event.buf)
+      start_all(event.buf)
     end,
   })
+
+  for _, buf in ipairs(vim.api.nvim_list_bufs()) do
+    if vim.api.nvim_buf_is_loaded(buf) and vim.bo[buf].filetype == "python" then
+      start_all(buf)
+    end
+  end
 end
 
 return M
