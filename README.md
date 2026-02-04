@@ -78,6 +78,15 @@ command -v ruff
 - `:lua vim.lsp.buf.rename()` / `code_action()` — refactor/actions
 - `:lua vim.lsp.buf.format({ async = true })` — format buffer
 
+### System clipboard yanks
+- The config appends `unnamedplus` to `clipboard`, so ordinary yanks (`yy`, `yw`, Visual `y`) already mirror into your OS clipboard—`Ctrl-v` outside Neovim pastes the same text.
+- For explicit control, use the `+` register: `"+y` copies the current selection, `"+p` pastes from the system clipboard, and `:reg +` shows what’s stored. This is handy if you ever remove `unnamedplus` or need to target the clipboard while leaving the default register untouched.
+- Mouse selections or `"*y` tap the primary selection (X11). Stick to `+` for predictable cross-platform copy/paste.
+
+### Ruff-powered actions
+- `<leader>f` fires `vim.lsp.buf.format()` which, in this setup, shells out to Ruff for lint-aware formatting (think `ruff check --fix` scoped to the current buffer). Use it after larger edits to guarantee imports stay sorted and style stays consistent.
+- `<leader>ca` opens LSP code actions. When Ruff reports a diagnostic, this menu gets populated with the exact quick-fixes Ruff suggests (rename to snake_case, remove unused imports, auto-fix formatting, etc.). Many fixes apply instantly without leaving Normal mode, so triage diagnostics with `[d` / `]d`, then drop into `<leader>ca` to repair the highlighted line.
+
 **Common mappings** (set in `lua/lsp_setup.lua`): `gd`, `gr`, `K`, `<leader>rn`, `<leader>ca`, `<leader>f`, `[d`, `]d`, `<leader>e`.
 
 **Most common commands (quick list):**
@@ -110,6 +119,13 @@ command -v ruff
 3. Edit a Python file (`nvim main.py`).
 4. Run `:LspInfo` — you should see `pyright` and `ruff` attached.
 5. Use the LSP mappings for navigation, refactors, formatting, and diagnostics.
+
+## 8) Code autocomplete (built-in)
+
+This minimalist stack intentionally skips heavier completion plugins and relies on Neovim's native LSP-powered completion instead:
+- Insert mode `Ctrl-x Ctrl-o` triggers omni-completion fed by the active LSP clients (Pyright + Ruff). You'll get signature help, attribute/method names, and typed completions straight from the language server.
+- If you prefer popups while you type, enable the built-in menu by setting `set completeopt=menuone,noinsert,noselect` (already configured via LSP defaults) and tap `Ctrl-Space` (or `Ctrl-n`) to refresh suggestions without leaving Insert mode.
+- Accept the highlighted item with `<CR>` or keep cycling through candidates with `Ctrl-n` / `Ctrl-p`. Because everything is LSP-backed, the suggestions understand imports, dataclasses, and type hints with no extra plugins.
 
 ## 7) Troubleshooting
 
