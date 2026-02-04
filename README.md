@@ -74,8 +74,22 @@ command -v ruff
 - `:LspInfo` — inspect attached clients
 - `:checkhealth lsp` — quick diagnostics
 - `:lua vim.diagnostic.goto_prev()` / `goto_next()` — jump diagnostics
+- `:lua vim.lsp.buf.definition()` / `references()` / `hover()` — core navigation/help
+- `:lua vim.lsp.buf.rename()` / `code_action()` — refactor/actions
+- `:lua vim.lsp.buf.format({ async = true })` — format buffer
 
-Common mappings (set in `lua/lsp_setup.lua`): `gd`, `gr`, `K`, `<leader>rn`, `<leader>ca`, `<leader>f`, `[d`, `]d`, `<leader>e`.
+**Common mappings** (set in `lua/lsp_setup.lua`): `gd`, `gr`, `K`, `<leader>rn`, `<leader>ca`, `<leader>f`, `[d`, `]d`, `<leader>e`.
+
+**Most common commands (quick list):**
+- `gd` — go to definition
+- `gr` — find references
+- `K` — hover docs
+- `<leader>rn` — rename symbol
+- `<leader>ca` — code actions
+- `<leader>f` — format
+- `[d` / `]d` — previous/next diagnostic
+- `<leader>e` — show diagnostic (float)
+- `Ctrl-o` / `Ctrl-i` — jump back/forward (after `gd`, etc.)
 
 ## 5) File tree (nvim-tree)
 
