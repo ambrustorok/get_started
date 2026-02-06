@@ -83,6 +83,13 @@ command -v ruff
 - For explicit control, use the `+` register: `"+y` copies the current selection, `"+p` pastes from the system clipboard, and `:reg +` shows what’s stored. This is handy if you ever remove `unnamedplus` or need to target the clipboard while leaving the default register untouched.
 - Mouse selections or `"*y` tap the primary selection (X11). Stick to `+` for predictable cross-platform copy/paste.
 
+### Visual block editing (vertical highlight)
+- Press `Ctrl-v` (or `Ctrl-q` in some terminals) in Normal mode to enter Visual Block, which lets you highlight a vertical column; move with `hjkl`/`w`/`b` just like any visual selection.
+- Once highlighted, `>` indents the block, `<` dedents, and `=` reindents according to `shiftwidth`—handy for aligning multi-line dicts or arguments.
+- Use `I` (capital i) to insert text in front of every selected line or `A` to append; type what you need, then hit `<Esc>` and Neovim applies the change to the whole block.
+- Any operator works on the block (`d` delete, `c` change, `gU` upper-case, etc.), and the built-in repeat command (`.`) replays the last change on the next column of lines.
+- Because this config enables the mouse (`set mouse=a` in `init.lua`), you can also `Ctrl`+drag with the mouse to create the same rectangular selection if your terminal supports it.
+
 ### Ruff-powered actions
 - `<leader>f` fires `vim.lsp.buf.format()` which, in this setup, shells out to Ruff for lint-aware formatting (think `ruff check --fix` scoped to the current buffer). Use it after larger edits to guarantee imports stay sorted and style stays consistent.
 - `<leader>ca` opens LSP code actions. When Ruff reports a diagnostic, this menu gets populated with the exact quick-fixes Ruff suggests (rename to snake_case, remove unused imports, auto-fix formatting, etc.). Many fixes apply instantly without leaving Normal mode, so triage diagnostics with `[d` / `]d`, then drop into `<leader>ca` to repair the highlighted line.
