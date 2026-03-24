@@ -7,6 +7,7 @@ vim.g.mapleader = " "
 local opt = vim.opt
 opt.number = true
 opt.relativenumber = true
+opt.signcolumn = "yes"
 opt.mouse = "a"
 opt.termguicolors = true
 opt.expandtab = true
