@@ -18,7 +18,45 @@ opt.splitbelow = true
 opt.splitright = true
 opt.ignorecase = true
 opt.smartcase = true
-opt.clipboard:append({ "unnamedplus" })
+opt.clipboard = ""
+
+local function set_match_highlights()
+  vim.api.nvim_set_hl(0, "TrailingWhitespace", { bg = "#5f0000" })
+  vim.api.nvim_set_hl(0, "NonAsciiCharacter", { bg = "#3b2f00", fg = "#ffd75f", underline = true })
+end
+
+local function refresh_window_matches()
+  if vim.bo.buftype ~= "" then
+    return
+  end
+
+  if vim.w.trailing_whitespace_match then
+    pcall(vim.fn.matchdelete, vim.w.trailing_whitespace_match)
+  end
+  if vim.w.non_ascii_match then
+    pcall(vim.fn.matchdelete, vim.w.non_ascii_match)
+  end
+
+  vim.w.trailing_whitespace_match = vim.fn.matchadd("TrailingWhitespace", [[\s\+$]])
+  vim.w.non_ascii_match = vim.fn.matchadd("NonAsciiCharacter", [=[[^\x00-\x7F]]=])
+end
+
+set_match_highlights()
+
+local highlight_group = vim.api.nvim_create_augroup("ConfigHighlights", { clear = true })
+
+vim.api.nvim_create_autocmd("ColorScheme", {
+  group = highlight_group,
+  callback = function()
+    set_match_highlights()
+    refresh_window_matches()
+  end,
+})
+
+vim.api.nvim_create_autocmd({ "BufWinEnter", "InsertLeave", "WinEnter" }, {
+  group = highlight_group,
+  callback = refresh_window_matches,
+})
 
 -- Install package manager
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"

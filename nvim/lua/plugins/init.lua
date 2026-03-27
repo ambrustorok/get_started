@@ -18,9 +18,9 @@ return {
           add = { text = "+" },
           change = { text = "~" },
           delete = { text = "_" },
-          topdelete = { text = "‾" },
+          topdelete = { text = "^" },
           changedelete = { text = "~" },
-          untracked = { text = "┆" },
+          untracked = { text = "|" },
         },
         signcolumn = true,
         numhl = false,
@@ -76,6 +76,18 @@ return {
         end,
       })
     end,
+  },
+
+  {
+    "kdheepak/lazygit.nvim",
+    cmd = {
+      "LazyGit",
+      "LazyGitConfig",
+      "LazyGitCurrentFile",
+      "LazyGitFilter",
+      "LazyGitFilterCurrentFile",
+    },
+    dependencies = { "nvim-lua/plenary.nvim" },
   },
 
   {

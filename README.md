@@ -1,154 +1,317 @@
-# How to start
+# How To Start
 
-- Just clone this repo and place its contents in `~/.config`
+Clone this repo into `~/.config` and open Neovim with `nvim`.
 
-# Minimal Neovim + Python (Pyright + Ruff)
+# Minimal Neovim + Python
 
-This repo contains a tiny Neovim setup (0.11+) that focuses on:
-- System clipboard integration (`unnamedplus` is enabled by default)
-- Automatic Pyright **and** Ruff install/start whenever you edit Python files
-- `nvim-tree` on `<C-n>` for a lightweight file explorer
-- Only two plugins (`nvim-tree` and `mason.nvim`); all LSP wiring lives in `lua/lsp_setup.lua`
+This setup is intentionally small, but it covers the useful daily basics:
+- `lazy.nvim` for plugin management
+- `nvim-tree` on `<C-n>` for a simple file tree
+- `gitsigns` for inline Git hunks
+- `lazygit` inside Neovim on `<leader>gg`
+- Mason-managed `pyright` and `ruff` for Python
+- explicit clipboard behavior: `y` stays local, `Y` copies to the system clipboard
+- visible warnings for trailing whitespace and non-ASCII characters
 
-## 1) Install / Upgrade Neovim to 0.11+
+## Core Ideas
 
-AppImage install (safe for Ubuntu/Debian):
-```sh
-mkdir -p ~/.local/bin
-curl -L -o ~/.local/bin/nvim \
-  https://github.com/neovim/neovim/releases/latest/download/nvim-linux-x86_64.appimage
-chmod +x ~/.local/bin/nvim
-```
-Add `~/.local/bin` to `PATH` (bash example):
-```sh
-grep -qxF 'export PATH="$HOME/.local/bin:$PATH"' ~/.bashrc || \
-  echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
-source ~/.bashrc
-```
-Then verify:
-```sh
-which nvim
-nvim --version
-```
-You should see `~/.local/bin/nvim` and `NVIM v0.11.x`.
+- The leader key is `Space`.
+- When you see `<leader>e`, read that as: press `Space`, then `e`.
+- Splits open where you expect: horizontal splits below, vertical splits to the right.
+- This config is built around stock Neovim behavior first, with a few practical additions.
 
-## 2) Project layout
+## Layout
 
-```
+```text
+~/.config/README.md
+~/.config/.tmux.conf
 ~/.config/nvim/init.lua
-~/.config/nvim/lua/plugins/init.lua
 ~/.config/nvim/lua/mappings.lua
+~/.config/nvim/lua/plugins/init.lua
 ~/.config/nvim/lua/lsp_setup.lua
 ```
-`lazy.nvim` loads everything under `lua/plugins/`, so keep additional plugin specs there if you expand this setup.
 
-## 3) Python LSP via Mason
+## Install / Upgrade Neovim
 
-`lua/lsp_setup.lua` does all of the work:
-- ensures the Mason packages `pyright` and `ruff` are installed,
-- watches for Python buffers and launches both servers via `vim.lsp.start`,
-- wires buffer-local keymaps on `LspAttach` (`gd`, `gr`, `K`, `<leader>rn`, `<leader>ca`, `<leader>f`).
+Neovim 0.11+ is required.
 
-`pyright` provides type checking and navigation, while `ruff` (through `ruff server`) handles linting plus formatting (so `<leader>f` uses Ruff).
-
-Mason installs binaries to `~/.local/share/nvim/mason/bin`. The config prepends that directory to `$PATH`, so Neovim can run the tools immediately.
-
-## 4) Useful commands
-
-### Lazy (plugin manager)
-- `:Lazy` / `:Lazy sync` / `:Lazy clean`
-
-### Mason (tool installer)
-- `:Mason` — UI for packages
-- `:MasonUpdate` — refresh registry
-- `:MasonLog` — open Mason log
-
-CLI checks:
 ```sh
-ls ~/.local/share/nvim/mason/bin
+nvim --version
+```
+
+If that first line is not `NVIM v0.11.x` or newer, upgrade Neovim before using this config.
+
+## Plugins And Tools
+
+### `lazy.nvim`
+
+Plugin manager. Main commands:
+- `:Lazy`
+- `:Lazy sync`
+- `:Lazy clean`
+
+### `mason.nvim`
+
+Installs external developer tools Neovim needs.
+
+Main commands:
+- `:Mason`
+- `:MasonUpdate`
+- `:MasonLog`
+
+### `nvim-tree`
+
+File explorer on `<C-n>`.
+
+### `gitsigns.nvim`
+
+Shows added, changed, and deleted lines in the sign column. It also gives hunk actions like stage, reset, preview, and blame.
+
+### `lazygit.nvim`
+
+Thin Neovim wrapper around the `lazygit` terminal UI.
+
+Requirements:
+- the `lazygit` binary must already be installed and available on your `PATH`
+
+Main mappings:
+- `<leader>gg` opens LazyGit
+- `<leader>gf` opens LazyGit focused on the current file
+
+Main command:
+- `:LazyGit`
+
+Quick check:
+
+```sh
+command -v lazygit
+```
+
+## Keymaps
+
+### General
+
+- `<C-n>`: toggle file tree
+- `<leader>e`: show diagnostics for the current line
+- `[d`: previous diagnostic
+- `]d`: next diagnostic
+
+### LSP
+
+These are attached when an LSP client starts:
+- `gd`: go to definition
+- `gr`: go to references
+- `K`: hover documentation
+- `<leader>rn`: rename symbol
+- `<leader>ca`: code action
+- `<leader>f`: format buffer
+- `Ctrl-o`: jump back after navigation
+- `Ctrl-i`: jump forward again
+
+### Git
+
+- `]c`: next Git hunk
+- `[c`: previous Git hunk
+- `<leader>hs`: stage hunk
+- `<leader>hr`: reset hunk
+- `<leader>hS`: stage buffer
+- `<leader>hu`: undo staged hunk
+- `<leader>hR`: reset buffer
+- `<leader>hp`: preview hunk
+- `<leader>hb`: blame line
+- `<leader>hB`: toggle inline blame
+- `<leader>hd`: diff current buffer
+- `<leader>gg`: open LazyGit
+- `<leader>gf`: open LazyGit for current file
+
+## Clipboard
+
+This config uses explicit clipboard actions because they are easier to reason about:
+- `y` behaves like normal Vim yank and stays inside Neovim registers
+- `Y` copies to the system clipboard
+
+Examples:
+- normal mode `Y`: copy the current line to the OS clipboard
+- visual mode `Y`: copy the selection to the OS clipboard
+- `"+y`: explicit system clipboard yank
+- `"+p`: paste from the system clipboard
+- `:reg +`: inspect the system clipboard register
+
+This keeps ordinary editing predictable while still making "copy this outside Neovim" very fast.
+
+## Visual Block Editing
+
+This is the vertical editing mode your colleague was likely using.
+
+- `Ctrl-v`: start Visual Block mode
+- `Ctrl-q`: use this instead if your terminal steals `Ctrl-v`
+- move with `hjkl`, `w`, `b`, `0`, `$`
+- `I`: insert at the start of every selected line
+- `A`: append at the end of every selected line
+- `d`: delete the selected block
+- `c`: change the selected block
+- `>` / `<`: indent or dedent the block
+
+Typical example:
+1. Press `Ctrl-v`
+2. Select a column on several lines
+3. Press `I`
+4. Type text
+5. Press `Esc`
+
+Neovim will apply that insert to every selected line.
+
+## Increment / Decrement Numbers
+
+This is built into Vim and Neovim already. No plugin is needed.
+
+- `Ctrl-a`: increment the number under the cursor
+- `Ctrl-x`: decrement the number under the cursor
+
+Examples:
+- cursor on `41`, press `Ctrl-a`, it becomes `42`
+- cursor on `100`, press `Ctrl-x`, it becomes `99`
+
+For multiple numbers in a visual selection:
+- `g Ctrl-a`: increment each matching number in the selection
+- `g Ctrl-x`: decrement each matching number in the selection
+
+That is useful for numbered lists, test data, ports, IDs, and similar repetitive edits.
+
+## Search And Replace
+
+### Search
+
+- `/text`: search forward
+- `?text`: search backward
+- `n`: next match
+- `N`: previous match
+- `*`: search for the word under the cursor
+
+### Replace
+
+- `:%s/old/new/g`: replace all matches in the file
+- `:%s/old/new/gc`: replace all matches in the file with confirmation
+- `:s/old/new/g`: replace on the current line
+
+If you want the current word:
+
+```vim
+:%s/\<word\>/new_word/gc
+```
+
+The `c` flag is usually the right default because it prevents accidental broad replacements.
+
+## File Tree
+
+Open it with `<C-n>`.
+
+Useful default `nvim-tree` actions:
+- `j` / `k`: move
+- `l` or `<CR>`: open / expand
+- `h`: close directory / go to parent
+- `v`: vertical split
+- `s`: horizontal split
+- `a`: add file or directory
+- `r`: rename
+- `d`: delete
+- `R`: refresh
+- `H`: toggle dotfiles
+- `I`: toggle gitignored files
+- `?`: help inside the tree
+
+## Python Setup
+
+`lua/lsp_setup.lua` handles Python automatically:
+- installs `pyright` through Mason if needed
+- installs `ruff` through Mason if needed
+- starts both LSP servers for Python buffers
+- attaches buffer-local LSP keymaps when they are ready
+- expects `ruff`, not `ruff-lsp`; if you still have `ruff-lsp` installed in Mason, remove it
+
+Quick validation:
+
+```sh
 command -v pyright-langserver
 command -v ruff
 ```
 
-### Built-in LSP
-- `:LspInfo` — inspect attached clients
-- `:checkhealth lsp` — quick diagnostics
-- `:lua vim.diagnostic.goto_prev()` / `goto_next()` — jump diagnostics
-- `:lua vim.lsp.buf.definition()` / `references()` / `hover()` — core navigation/help
-- `:lua vim.lsp.buf.rename()` / `code_action()` — refactor/actions
-- `:lua vim.lsp.buf.format({ async = true })` — format buffer
+Inside Neovim:
+- `:LspInfo`
+- `:Mason`
 
-### System clipboard yanks
-- The config appends `unnamedplus` to `clipboard`, so ordinary yanks (`yy`, `yw`, Visual `y`) already mirror into your OS clipboard—`Ctrl-v` outside Neovim pastes the same text.
-- For explicit control, use the `+` register: `"+y` copies the current selection, `"+p` pastes from the system clipboard, and `:reg +` shows what’s stored. This is handy if you ever remove `unnamedplus` or need to target the clipboard while leaving the default register untouched.
-- Mouse selections or `"*y` tap the primary selection (X11). Stick to `+` for predictable cross-platform copy/paste.
+## Visible Warnings
 
-### Visual block editing (vertical highlight)
-- Press `Ctrl-v` (or `Ctrl-q` in some terminals) in Normal mode to enter Visual Block, which lets you highlight a vertical column; move with `hjkl`/`w`/`b` just like any visual selection.
-- Once highlighted, `>` indents the block, `<` dedents, and `=` reindents according to `shiftwidth`—handy for aligning multi-line dicts or arguments.
-- Use `I` (capital i) to insert text in front of every selected line or `A` to append; type what you need, then hit `<Esc>` and Neovim applies the change to the whole block.
-- Any operator works on the block (`d` delete, `c` change, `gU` upper-case, etc.), and the built-in repeat command (`.`) replays the last change on the next column of lines.
-- Because this config enables the mouse (`set mouse=a` in `init.lua`), you can also `Ctrl`+drag with the mouse to create the same rectangular selection if your terminal supports it.
+This config highlights things we usually want to fix instead of ignore:
+- trailing whitespace at the end of lines
+- non-ASCII / Unicode characters
 
-### Ruff-powered actions
-- `<leader>f` fires `vim.lsp.buf.format()` which, in this setup, shells out to Ruff for lint-aware formatting (think `ruff check --fix` scoped to the current buffer). Use it after larger edits to guarantee imports stay sorted and style stays consistent.
-- `<leader>ca` opens LSP code actions. When Ruff reports a diagnostic, this menu gets populated with the exact quick-fixes Ruff suggests (rename to snake_case, remove unused imports, auto-fix formatting, etc.). Many fixes apply instantly without leaving Normal mode, so triage diagnostics with `[d` / `]d`, then drop into `<leader>ca` to repair the highlighted line.
+That makes it easier to keep files clean, especially in scripts, config files, and codebases where plain ASCII is preferred.
 
-**Common mappings** (set in `lua/lsp_setup.lua`): `gd`, `gr`, `K`, `<leader>rn`, `<leader>ca`, `<leader>f`, `[d`, `]d`, `<leader>e`.
+## tmux Copying
 
-**Most common commands (quick list):**
-- `gd` — go to definition
-- `gr` — find references
-- `K` — hover docs
-- `<leader>rn` — rename symbol
-- `<leader>ca` — code actions
-- `<leader>f` — format
-- `[d` / `]d` — previous/next diagnostic
-- `<leader>e` — show diagnostic (float)
-- `Ctrl-o` / `Ctrl-i` — jump back/forward (after `gd`, etc.)
+Current tmux config is minimal and keeps tmux defaults:
+- prefix is still `Ctrl-b`
+- no special tmux clipboard integration is configured
+- no tmux mouse mode is configured
 
-## 5) File tree (nvim-tree)
+### Copy inside tmux using copy mode
 
-- Toggle the explorer with `<C-n>`; the tree appears on the left and closes with the same mapping.
-- Move through entries with `j`/`k` (down/up) and jump to the top/bottom with `gg` / `G` just like a normal buffer.
-- `h` collapses the current directory (or jumps to its parent), while `l` expands a folder or opens a file; `L` opens the node and all children in one go.
-- Use `<CR>` (or `o`) to open the highlighted file. `v` splits vertically, `s` splits horizontally, and `<Tab>` keeps the tree focused while previewing the file.
-- `a` creates files/directories relative to the selected node, `d` deletes, and `r` renames; confirm prompts with `<CR>`.
-- Press `R` to refresh the tree when files change outside Neovim. Toggle dotfiles with `H` and git-ignored files with `I` when you need a cleaner view.
-- `C` re-roots the tree at the folder under your cursor, `p` jumps to that node's parent, and `q` closes the tree window entirely.
-- `Ctrl-w h/l` moves focus between the tree and editing windows; `:wincmd =` evens sizes after resizing.
-- Hit `?` inside the tree for the built-in cheatsheet of every default mapping if you forget something.
+1. Press `Ctrl-b` then `[`
+2. Move with Vim keys or arrows
+3. Press `Space` to start selection
+4. Move to expand the selection
+5. Press `Enter` to copy into tmux's paste buffer
+6. Press `Ctrl-b` then `]` to paste it
 
-## 6) Typical workflow
+### Copy using the terminal mouse
 
-1. Run `:Lazy sync` to install plugins.
-2. Open `:Mason` and confirm `pyright` + `ruff` show “Installed” (the helper auto-installs them if missing).
-3. Edit a Python file (`nvim main.py`).
-4. Run `:LspInfo` — you should see `pyright` and `ruff` attached.
-5. Use the LSP mappings for navigation, refactors, formatting, and diagnostics.
+If you want to copy with the mouse in a terminal, that is usually handled by the terminal emulator itself, not Neovim or tmux.
 
-## 8) Code autocomplete (built-in)
+Common pattern:
+- drag to select text with the mouse
+- if mouse support gets in the way, hold `Shift` while dragging
 
-This minimalist stack intentionally skips heavier completion plugins and relies on Neovim's native LSP-powered completion instead:
-- Insert mode `Ctrl-x Ctrl-o` triggers omni-completion fed by the active LSP clients (Pyright + Ruff). You'll get signature help, attribute/method names, and typed completions straight from the language server.
-- If you prefer popups while you type, enable the built-in menu by setting `set completeopt=menuone,noinsert,noselect` (already configured via LSP defaults) and tap `Ctrl-Space` (or `Ctrl-n`) to refresh suggestions without leaving Insert mode.
-- Accept the highlighted item with `<CR>` or keep cycling through candidates with `Ctrl-n` / `Ctrl-p`. Because everything is LSP-backed, the suggestions understand imports, dataclasses, and type hints with no extra plugins.
+That depends on the terminal emulator, but `Shift` is the common escape hatch.
 
-## 7) Troubleshooting
+### Copy from Neovim to the system clipboard while inside tmux
+
+Use Neovim's system clipboard register directly:
+- visual select text, then press `Y`
+- or use `"+y`
+
+That bypasses tmux's internal paste buffer and targets the OS clipboard.
+
+## Typical Workflow
+
+1. Run `:Lazy sync`
+2. Run `:Mason` and make sure `pyright` and `ruff` are installed
+3. Open a Python file
+4. Run `:LspInfo`
+5. Use `gd`, `gr`, `K`, `<leader>ca`, and `<leader>f`
+6. Use `<leader>gg` when you want a full Git UI without leaving Neovim
+
+## Troubleshooting
 
 ### `:Mason` not found
-- Run `:Lazy sync` (ensures `mason.nvim` is installed)
-- Confirm `mason.nvim` still exists in `lua/plugins/init.lua`
+
+- run `:Lazy sync`
+- check that `williamboman/mason.nvim` is still present in `nvim/lua/plugins/init.lua`
+
+### `:LazyGit` not found
+
+- run `:Lazy sync`
+- check that `kdheepak/lazygit.nvim` is still present in `nvim/lua/plugins/init.lua`
+- make sure the external `lazygit` binary is installed
 
 ### `pyright` or `ruff` missing
-- Run `:Mason` → press `i` on the package to install
-- Ensure `~/.local/share/nvim/mason/bin` is on `$PATH` (see `init.lua` snippet)
-- Restart Neovim and re-open the Python file
+
+- open `:Mason`
+- install the package from the Mason UI
+- restart Neovim and reopen the Python file
 
 ### LSP not attaching
-- `:LspInfo` inside a `.py` buffer (expect both `pyright` and `ruff`)
-- Make sure the buffer filetype is `python` (`:set filetype?`)
-- Open `lua/lsp_setup.lua` and confirm the `servers` table lists the clients you expect
 
-### Ruff warning about `ruff-lsp`
-- This config already uses the `ruff` package and launches `ruff server`, so no action is required. If Mason shows an old `ruff-lsp` install, you can uninstall it from the UI.
+- run `:LspInfo` inside a Python buffer
+- check `:set filetype?`
+- confirm `pyright` and `ruff` exist in `nvim/lua/lsp_setup.lua`
