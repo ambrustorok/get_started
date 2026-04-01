@@ -203,6 +203,44 @@ For multiple numbers in a visual selection:
 
 That is useful for numbered lists, test data, ports, IDs, and similar repetitive edits.
 
+## Find And Replace
+
+### Find and replace across multiple files
+
+The built-in workflow uses `grep` (or `vimgrep`) to populate the quickfix list, then `cdo` to run the substitution on every match:
+
+```vim
+:grep -r "old_text" .
+:cdo s/old_text/new_text/g | update
+```
+
+- `:grep -r "old_text" .` — search recursively from the current directory and populate the quickfix list
+- `:cdo s/old_text/new_text/g | update` — run the substitution on every file that had a match and save each one
+
+To preview the quickfix list first:
+
+```vim
+:copen
+```
+
+To restrict the search to a file type (example: only `.py` files):
+
+```vim
+:grep -r --include="*.py" "old_text" .
+:cdo s/old_text/new_text/g | update
+```
+
+To do a whole-word match only:
+
+```vim
+:grep -rw "old_text" .
+:cdo s/\<old_text\>/new_text/g | update
+```
+
+The `| update` at the end of `:cdo` saves each file after the substitution. Without it, the changes stay unsaved across all buffers.
+
+---
+
 ## Search And Replace
 
 ### Search
