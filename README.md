@@ -10,6 +10,7 @@ This setup is intentionally small, but it covers the useful daily basics:
 - `gitsigns` for inline Git hunks
 - `lazygit` inside Neovim on `<leader>gg`
 - Mason-managed `pyright` and `ruff` for Python
+- Markdown split preview with `markview.nvim` (`<leader>tp` to open side-by-side)
 - explicit clipboard behavior: `y` stays local, `Y` copies to the system clipboard
 - visible warnings for trailing whitespace and non-ASCII characters
 
@@ -28,6 +29,7 @@ This setup is intentionally small, but it covers the useful daily basics:
 ~/.config/nvim/init.lua
 ~/.config/nvim/lua/mappings.lua
 ~/.config/nvim/lua/plugins/init.lua
+~/.config/nvim/lua/plugins/markdown.lua
 ~/.config/nvim/lua/lsp_setup.lua
 ```
 
@@ -87,6 +89,24 @@ Quick check:
 command -v lazygit
 ```
 
+### `markview.nvim`
+
+Markdown (and HTML, LaTeX, Typst, YAML) previewer with two modes:
+
+- **Split preview** — opens a read-only rendered pane side-by-side with the source buffer, scroll-synced
+- **In-buffer rendering** — renders headings, bullets, tables, checkboxes, and code blocks directly in the editing buffer (hybrid mode keeps the line under your cursor editable)
+
+Depends on `nvim-treesitter` (installed alongside it) with the `markdown` and `markdown_inline` grammars. Fetch them once with `:TSUpdate`.
+
+Main mappings:
+- `<leader>tp`: open/close the split preview pane
+- `<leader>tm`: toggle in-buffer rendering on/off
+
+Main commands:
+- `:Markview splitToggle` — same as `<leader>tp`
+- `:Markview Toggle` — same as `<leader>tm`
+- `:Markview Enable` / `:Markview Disable` — global on/off
+
 ## Keymaps
 
 ### General
@@ -107,6 +127,11 @@ These are attached when an LSP client starts:
 - `<leader>f`: format buffer
 - `Ctrl-o`: jump back after navigation
 - `Ctrl-i`: jump forward again
+
+### Markdown
+
+- `<leader>tp`: open/close split preview pane (side-by-side rendered view)
+- `<leader>tm`: toggle in-buffer rendering on/off
 
 ### Git
 
@@ -285,11 +310,13 @@ That bypasses tmux's internal paste buffer and targets the OS clipboard.
 ## Typical Workflow
 
 1. Run `:Lazy sync`
-2. Run `:Mason` and make sure `pyright` and `ruff` are installed
-3. Open a Python file
-4. Run `:LspInfo`
-5. Use `gd`, `gr`, `K`, `<leader>ca`, and `<leader>f`
-6. Use `<leader>gg` when you want a full Git UI without leaving Neovim
+2. Run `:TSUpdate` (one-time, fetches the markdown grammars)
+3. Run `:Mason` and make sure `pyright` and `ruff` are installed
+4. Open a Python file
+5. Run `:LspInfo`
+6. Use `gd`, `gr`, `K`, `<leader>ca`, and `<leader>f`
+7. Use `<leader>gg` when you want a full Git UI without leaving Neovim
+8. Open any `.md` file to see in-buffer Markdown rendering; toggle it with `<leader>tm`
 
 ## Troubleshooting
 
@@ -315,3 +342,11 @@ That bypasses tmux's internal paste buffer and targets the OS clipboard.
 - run `:LspInfo` inside a Python buffer
 - check `:set filetype?`
 - confirm `pyright` and `ruff` exist in `nvim/lua/lsp_setup.lua`
+
+### Markdown preview not working
+
+- run `:Lazy sync` to make sure `markview.nvim` and `nvim-treesitter` are installed
+- run `:TSUpdate` to fetch the `markdown` and `markdown_inline` grammars
+- run `:checkhealth markview` to see if anything is missing
+- check that the buffer filetype is `markdown` with `:set filetype?`
+- toggle split preview with `<leader>tp`, or in-buffer rendering with `<leader>tm`
