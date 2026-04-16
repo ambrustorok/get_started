@@ -345,6 +345,87 @@ Use Neovim's system clipboard register directly:
 
 That bypasses tmux's internal paste buffer and targets the OS clipboard.
 
+## tmux Basics
+
+The **prefix key** is `Ctrl-b`. This means you first press `Ctrl-b`, release, then press the next key for tmux commands.
+
+### Copying and Highlighting Text in tmux
+
+1. **Enter copy mode**: `prefix + [`
+2. **Start selection**: Press `Space`
+3. **Move cursor**: Use arrow keys or Vim motions (`hjkl`, `w`, `b`, etc.)
+4. **Copy selection**: Press `Enter`
+5. **Paste**: `prefix + ]`
+
+For **mouse users**: Hold `Shift` while selecting text to bypass tmux and use the terminal emulator's native selection.
+
+### tmux Inside tmux (Nested Sessions)
+
+If you SSH into another machine and start tmux there, you'll have nested tmux sessions. To send commands to the inner tmux:
+
+- **Prefix for inner tmux**: `Ctrl-b` twice (first sends to outer tmux, second to inner)
+- **Alternative**: Remap the outer tmux prefix (e.g., `Ctrl-a`) in `~/.tmux.conf`:
+  ```tmux
+  set -g prefix C-a
+  unbind C-b
+  bind C-a send-prefix
+  ```
+
+## tmux Session Management with tmux-resurrect
+
+This config uses [`tmux-resurrect`](https://github.com/tmux-plugins/tmux-resurrect) to save and restore tmux sessions, including windows, panes, layout, and running commands (like SSH connections).
+
+### Setup
+
+1. **Install TPM (Tmux Plugin Manager)**:
+   ```sh
+   git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
+   ```
+
+2. **Update `~/.config/.tmux.conf`** with the following:
+   ```tmux
+   # List of plugins
+   set -g @plugin 'tmux-plugins/tpm'
+   set -g @plugin 'tmux-plugins/tmux-resurrect'
+
+   # Initialize TMUX plugin manager (keep this line at the very bottom of tmux.conf)
+   run '~/.tmux/plugins/tpm/tpm'
+   ```
+
+3. **Reload tmux config** to apply changes:
+   ```sh
+   tmux source-file ~/.tmux.conf
+   ```
+
+4. **Install plugins** inside tmux:
+   - Press `prefix + I` (capital `i`) to fetch and install plugins.
+
+### Usage
+
+- **Save your session manually**: `prefix + Ctrl-s`
+- **Restore your session manually**: `prefix + Ctrl-r`
+
+Saved sessions persist across tmux restarts and system reboots. SSH connections will reconnect automatically if they use SSH keys (no password required).
+
+### SSH Session Restore
+
+SSH panes are restored automatically on `prefix + Ctrl-r`. The custom strategy in `~/.tmux/plugins/tmux-resurrect/strategies/ssh_default_strategy.sh` reconnects the SSH session and drops back into fish at the last visited directory.
+
+**How the last directory is persisted on the remote:**
+
+`~/.config/fish/conf.d/save_last_dir.fish` writes `$PWD` to `~/.last_dir` on every directory change. On reconnect, fish reads that file and `cd`s there before starting.
+
+**To set up a new remote host:**
+
+1. Copy the fish hook:
+   ```sh
+   scp ~/.config/fish/conf.d/save_last_dir.fish <host>:~/.config/fish/conf.d/
+   ```
+2. Make sure the remote's login shell launches fish. Add to `~/.bash_profile` on the remote:
+   ```sh
+   [[ $- == *i* ]] && exec fish
+   ```
+
 ## Typical Workflow
 
 1. Run `:Lazy sync`
